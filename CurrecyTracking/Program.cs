@@ -2,6 +2,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<CurrecyTracking.Interfaces.ICurrencyMaster, CurrecyTracking.Services.CurrencyMasterService>();
+builder.Services.AddHttpClient<CurrecyTracking.Interfaces.IFrankfurterService, CurrecyTracking.Services.FrankfurterService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.frankfurter.dev/v1/");
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 
 var app = builder.Build();
 

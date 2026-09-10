@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../CurrecyTracking/Services/FrankfurterService.cs" Link="FrankfurterService.cs" />
+    <Compile Include="../../CurrecyTracking/Interfaces/IFrankfurterService.cs" Link="IFrankfurterService.cs" />
+    <Compile Include="../../CurrecyTracking/Models/ExchangeRatesModel.cs" Link="ExchangeRatesModel.cs" />
+    <Compile Include="../../CurrecyTracking/Models/ExchangeRateHistoryModel.cs" Link="ExchangeRateHistoryModel.cs" />
+    <Compile Include="../../CurrecyTracking/Models/FxRateModel.cs" Link="FxRateModel.cs" />
+    <Using Include="System.Net.Http.Json" />
+  </ItemGroup>
+</Project>
