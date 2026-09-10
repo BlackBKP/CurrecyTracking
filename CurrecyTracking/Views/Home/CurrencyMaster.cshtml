@@ -1,15 +1,20 @@
-﻿@model List<CurrecyTracking.Models.CurrencyModel>
+@model List<CurrecyTracking.Models.CurrencyModel>
 @{
     ViewData["title"] = "Currency Master";
 }
 <div class="text-center">
+    <div asp-validation-summary="All" class="text-danger text-start" role="alert"></div>
+    @if (TempData["Success"] is string message)
+    {
+        <div class="alert alert-success" role="status">@message</div>
+    }
     <div class="card">
         <div class="card-header">
             <div class="d-flex justify-content-between">
                 <span class="card-title">
                     <i class="fas fa-dollar-sign"></i> Currency Master
                 </span>
-                <button type="button" class="btn btn-primary btn-sm">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCurrencyModal">
                     <i class="fas fa-plus"></i> Add Currency
                 </button>
             </div>
@@ -25,6 +30,10 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr><td colspan="4">No currencies found. Add a currency to get started.</td></tr>
+                    }
                     @foreach (var currency in Model)
                     {
                         <tr>
@@ -32,12 +41,27 @@
                             <td style="text-align:left">
                                 @currency.CurrencyName
                             </td>
-                            <td>@currency.IsActive</td>
                             <td>
-                                <button type="button" class="btn btn-warning">
+                                @if (currency.IsActive)
+                                {
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check"></i> Active
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times"></i> Inactive
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editCurrencyModal"
+                                        data-code="@currency.CurrencyCode" data-name="@currency.CurrencyName" data-active="@currency.IsActive.ToString().ToLowerInvariant()">
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
-                                <button type="button" class="btn btn-danger">
+                                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteCurrencyModal"
+                                        data-code="@currency.CurrencyCode" data-name="@currency.CurrencyName">
                                     <i class="fas fa-trash-alt"></i> Delete
                                 </button>
                             </td>
@@ -45,6 +69,42 @@
                     }
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add modal -->
+<div class="modal fade" id="addCurrencyModal" tabindex="-1" aria-labelledby="addCurrencyTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="@Url.Action("AddCurrency", "Home")" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCurrencyTitle">
+                        <i class="fas fa-plus"></i> Add Currency
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="addCode" class="form-label">Code</label>
+                        <input id="addCode" autocomplete="off" name="CurrencyCode" class="form-control" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" title="Enter a three-letter currency code." />
+                    </div>
+                    <div class="mb-3">
+                        <label for="addName" class="form-label">Currency Name</label>
+                        <input id="addName" autocomplete="off" name="CurrencyName" class="form-control" required maxlength="50" />
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" id="addActive" name="IsActive" value="true" class="form-check-input" checked />
+                        <label for="addActive" class="form-check-label">Active</label>
+                    </div>
+                    <input type="hidden" name="IsActive" value="false" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Currency</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -57,7 +117,7 @@
                 @Html.AntiForgeryToken()
                 <div class="modal-header">
                     <h5 class="modal-title" id="editCurrencyTitle">
-                        Edit Currency
+                        <i class="fas fa-edit"></i> Edit Currency
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                     </button>
@@ -72,7 +132,7 @@
                         <label for="editName" class="form-label">
                             Currency Name
                         </label>
-                        <input id="editName" name="CurrencyName" class="form-control" required />
+                        <input id="editName" name="CurrencyName" class="form-control" required maxlength="100" />
                     </div>
                     <div class="form-check">
                         <input type="checkbox" id="editActive" name="IsActive" value="true" class="form-check-input" />
@@ -101,19 +161,16 @@
         <div class="modal-content">
             <form action="@Url.Action("DeleteCurrency", "Home")" method="post">
                 @Html.AntiForgeryToken()
-
                 <div class="modal-header">
                     <h5 class="modal-title" id="deleteCurrencyTitle">
-                        Delete Currency
+                        <i class="fas fa-trash-alt"></i> Delete Currency
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-
                 <div class="modal-body">
                     <input type="hidden" id="deleteCode" name="CurrencyCode" />
                     <p class="mb-0">Are you sure you want to delete <strong id="deleteCurrencyName"></strong> ?</p>
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times"></i> Cancel
@@ -129,8 +186,16 @@
 @section Scripts
 {
     <script type="text/javascript">
-        $(document).ready(async function () {
-
+        document.getElementById('editCurrencyModal').addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            document.getElementById('editCode').value = button.dataset.code;
+            document.getElementById('editName').value = button.dataset.name;
+            document.getElementById('editActive').checked = button.dataset.active === 'true';
+        });
+        document.getElementById('deleteCurrencyModal').addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            document.getElementById('deleteCode').value = button.dataset.code;
+            document.getElementById('deleteCurrencyName').textContent = button.dataset.name + ' (' + button.dataset.code + ')';
         });
     </script>
 }
