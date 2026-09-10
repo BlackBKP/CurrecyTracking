@@ -1,44 +1,156 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model List<CurrecyTracking.Models.CurrencyModel>
+@{
+    ViewData["Title"] = "FX Rate Monitor";
 }
-<div class="text-center">
-    <div class="card">
-        <div class="card-header">
-            <div class="d-flex justify-content-between">
-                <span>Base Currecy: THB</span>
-                <button class="btn btn-primary">
-                    <i class="fas fa-refresh"></i> Refresh All
-                </button>
-            </div>
+<div class="card mt-4">
+    <div class="fx-panel" id="exchangeRates" data-url="@Url.Action("LatestRates", "Home")">
+        <div class="card-header d-flex justify-content-between">
+            <span>Base currency: THB</span>
+            <button type="button" id="refreshAll" class="fx-refresh-all" disabled="@(Model.Count == 0)">
+                Refresh all
+            </button>
         </div>
         <div class="card-body">
-            <table class="table table-bordered table-hover">
-                <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Currency Name</th>
-                        <th>Rate / THB</th>
-                        <th>Rate date</th>
-                        <th>Refresh</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>USD</td>
-                        <td>US Dollar</td>
-                        <td>36.42</td>
-                        <td>2026-07-15</td>
-                        <td>
-                            <button class="btn btn-secondary">
-                                <i class="fas fa-refresh"></i> Refresh
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer">
-
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width:10%">Code</th>
+                            <th scope="col" style="width:40%">Currency name</th>
+                            <th scope="col" style="width:20%;text-align:right" class="fx-number" title="Foreign currency units per 1 THB">Rate / THB</th>
+                            <th scope="col" style="width:20%">Rate date</th>
+                            <th scope="col" style="width:10%" class="fx-action">Refresh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var currency in Model)
+                        {
+                            <tr data-code="@currency.CurrencyCode">
+                                <th scope="row">@currency.CurrencyCode</th>
+                                <td>@currency.CurrencyName</td>
+                                <td class="fx-number" style="text-align:right">
+                                    <span class="rate">—</span>
+                                    <span class="tolerance-indicator" aria-hidden="true"></span>
+                                    <span class="rate-status visually-hidden">Not refreshed</span>
+                                </td>
+                                <td class="rate-date">—</td>
+                                <td class="fx-action">
+                                    <button type="button" class="btn btn-primary" aria-label="Refresh @currency.CurrencyCode">
+                                        Refresh
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        @if (Model.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="5" class="fx-empty">
+                                    No active currencies. Add or enable currencies in <a asp-action="CurrencyMaster">Currency Master</a>.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+    <div id="ratesMessage" class="fx-message alert" role="status" aria-live="polite" hidden></div>
 </div>
+@section Scripts
+{
+    <script type="text/javascript">
+        $(document).ready(async function () {
+            $('#refreshAll').on('click', async function () {
+                await refreshRates();
+            });
+
+            $('.refresh-rate').on('click', async function () {
+                await refreshRates($(this).closest('tr').attr('data-code'));
+            });
+
+            if ($('#exchangeRates tr[data-code]').length) {
+                await refreshRates();
+            }
+        });
+
+        async function fetchRates(currencyCode) {
+            let currencies = [];
+            await $.ajax({
+                url: $('#exchangeRates').attr('data-url'),
+                type: 'GET',
+                data: currencyCode ? { currencyCode: currencyCode } : {},
+                dataType: 'json',
+                cache: false,
+                timeout: 35000,
+                success: function (response) {
+                    currencies = response;
+                }
+            });
+            console.log(currencies);
+            return currencies;
+        }
+
+        function updateRates(rates, currencyCode) {
+            const formatter = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 8 });
+            $('#exchangeRates tr[data-code]').each(function () {
+                const row = $(this);
+                const code = row.attr('data-code');
+
+                if (currencyCode && code !== currencyCode) {
+                    return;
+                }
+
+                const result = rates.find(rate => rate.code === code);
+                row.find('.rate').text(result?.rate != null ? formatter.format(result.rate) : 'Unavailable');
+                row.find('.rate-date').text(result?.rate != null ? result.date : '—');
+                row.toggleClass('fx-tolerance-warning', result?.exceedsTolerance === true);
+                row.find('.tolerance-indicator').text(result?.exceedsTolerance ? (result.changePercent > 0 ? ' ▲' : ' ▼') : '');
+                const status = result?.message || (result?.changePercent != null
+                    ? (result.exceedsTolerance ? 'Outside ±1% tolerance' : 'Within ±1% tolerance')
+                    : 'Currency is no longer active. Reload the page.');
+                const details = result?.baseline != null
+                    ? status + '. Baseline: ' + formatter.format(result.baseline) + ' on ' + result.baselineDate
+                    + '; change: ' + result.changePercent.toFixed(4) + '%.' : status;
+                row.find('.rate-status').text(details);
+                row.find('.fx-number').attr('title', details);
+            });
+        }
+
+        async function refreshRates(currencyCode) {
+            const card = $('#exchangeRates');
+            const buttons = card.find('button');
+            const message = $('#ratesMessage');
+            buttons.prop('disabled', true);
+            card.attr('aria-busy', 'true');
+            message
+                .removeClass('alert-success alert-danger')
+                .addClass('alert-warning')
+                .prop('hidden', false).text('Loading latest rates and previous working-day baselines…');
+
+            try {
+                const rates = await fetchRates(currencyCode);
+                updateRates(rates, currencyCode);
+                const incomplete = rates.some(rate => rate.rate == null || (rate.code !== 'THB' && rate.baseline == null));
+                message.toggleClass('alert-warning', incomplete).toggleClass('alert-success', !incomplete)
+                    .prop('hidden', !incomplete)
+                    .text(incomplete ? '⚠ ' + rates.filter(rate => rate.rate == null || (rate.code !== 'THB' && rate.baseline == null))
+                        .map(rate => rate.code + ': ' + (rate.message || 'Rate unavailable.')).join(' ') : '');
+            } catch (error) {
+                const errorMessage = error.responseJSON?.message || (error.statusText === 'timeout'
+                    ? 'The rate request timed out. Please refresh again.' : 'Unable to connect to the rate service. Please try again.');
+                message.removeClass('alert-warning alert-success').addClass('alert-danger')
+                    .text('⚠ Refresh failed' + (currencyCode ? ' for ' + currencyCode : '') + ': ' + errorMessage
+                        + ' Showing last known rates where available.');
+                $('#exchangeRates tr[data-code]').each(function () {
+                    if (!currencyCode || $(this).attr('data-code') === currencyCode) {
+                        $(this).find('.rate-status').text('Refresh failed — displayed values may be out of date.');
+                        $(this).find('.fx-number').attr('title', 'Refresh failed — displayed values may be out of date.');
+                    }
+                });
+            } finally {
+                buttons.prop('disabled', false);
+                card.removeAttr('aria-busy');
+            }
+        }
+    </script>
+}

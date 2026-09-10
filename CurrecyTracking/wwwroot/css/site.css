@@ -20,3 +20,33 @@ html {
 body {
   margin-bottom: 60px;
 }
+/* Home FX monitor */
+.fx-monitor { max-width: 752px; margin: 24px auto; color: #172030; font-size: 12px; letter-spacing: .1px; }
+.fx-breadcrumb { color: #727d8e; font-size: 11px; margin-bottom: 2px; }
+.fx-breadcrumb span { margin: 0 5px; }
+.fx-monitor h1 { font-size: 16px; font-weight: 700; line-height: 1.5; margin: 0 0 10px; }
+.fx-panel { border: 1px solid #d7dce4; border-radius: 8px; overflow: hidden; }
+.fx-toolbar { min-height: 51px; padding: 11px 15px; display: flex; align-items: center; justify-content: space-between; background: #f9fafb; color: #465266; }
+.fx-refresh-all { border: 1px solid #d7dce4; border-radius: 4px; padding: 5px 12px; background: #fff; color: #465266; font: inherit; }
+.fx-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.fx-table th, .fx-table td { padding: 7px 12px; border-top: 1px solid #eceef2; vertical-align: middle; }
+.fx-table thead { background: #f2f3f5; color: #4d5868; }
+.fx-table thead th { font-weight: 700; white-space: nowrap; }
+.fx-table tbody th { font-weight: 700; }
+.fx-table .fx-number { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fx-table .rate-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fx-table .fx-action { text-align: right; white-space: nowrap; }
+.fx-table .refresh-rate { background: none; border: 0; padding: 0; color: #465266; text-decoration: underline; font: inherit; font-size: 11px; }
+.fx-monitor button:hover { color: #172030; background-color: #edf0f4; }
+.fx-monitor button:focus-visible { outline: 2px solid #456aaf; outline-offset: 3px; }
+.fx-monitor button:disabled { opacity: .5; cursor: wait; }
+.fx-table .fx-tolerance-warning { background: #fff6d9; }
+.fx-table .fx-tolerance-warning .fx-number { color: #946200; font-weight: 700; }
+.fx-empty { padding: 20px 12px !important; text-align: center; }
+.fx-message { margin: 12px 0 0; padding: 7px 12px; border-radius: 7px; font-size: 12px; }
+.fx-message.alert-danger { color: #b42318; background: #fff0f0; border-color: #ffb9bd; }
+@media (max-width: 576px) {
+  .fx-monitor { margin-top: 16px; }
+  .fx-monitor h1 { font-size: 15px; }
+  .fx-table { min-width: 580px; }
+}
